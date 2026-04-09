@@ -6,7 +6,6 @@ from datetime import datetime
 
 def summarize_news(articles: list) -> str:
   """Send articles to Groq (Llama 3) and get a clean email-ready summary."""
-
   if not articles:
    return "No recent AI or BI news articles were found in the last 24 hours."
 
@@ -19,10 +18,8 @@ def summarize_news(articles: list) -> str:
   Summary: {a['summary']}
   Link: {a['link']}
 """
-
- today = datetime.now().strftime("%A, %B %d %Y")
-
- prompt = f"""You are an expert technology news curator. Below are the latest AI and Business Intelligence (BI) news articles from the past 24 hours.
+today = datetime.now().strftime("%A, %B %d %Y")
+prompt = f"""You are an expert technology news curator. Below are the latest AI and Business Intelligence (BI) news articles from the past 24 hours.
 
 Your task: Write a concise, engaging daily digest email body for a professional audience.
 
@@ -62,7 +59,6 @@ ARTICLES:
   )
 
  return response.choices[0].message.content
-
 
 if __name__ == "__main__":
  # Quick test with a dummy article
