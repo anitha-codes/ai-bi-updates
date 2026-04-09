@@ -1,0 +1,6 @@
+{
+  "subscribers": [
+    "you@example.com"
+  ],
+  "_instructions": "Add email addresses to the 'subscribers' list above. One email per line. Then commit and push."
+}
