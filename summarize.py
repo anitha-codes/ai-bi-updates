@@ -49,16 +49,14 @@ ARTICLES:
 {article_text}
 """
 
-  client = Groq(api_key=os.environ["GROQ_API_KEY"])
-
-  response = client.chat.completions.create(
-   model="llama3-70b-8192", # Free, fast, high quality
-   messages=[{"role": "user", "content": prompt}],
-   max_tokens=1024,
-   temperature=0.5,
+client = Groq(api_key=os.environ["GROQ_API_KEY"])
+response = client.chat.completions.create(
+  model="llama3-70b-8192", # Free, fast, high quality
+  messages=[{"role": "user", "content": prompt}],
+  max_tokens=1024,
+  temperature=0.5,
   )
-
- return response.choices[0].message.content
+return response.choices[0].message.content
 
 if __name__ == "__main__":
  # Quick test with a dummy article
