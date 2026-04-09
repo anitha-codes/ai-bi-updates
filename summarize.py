@@ -55,7 +55,7 @@ ARTICLES:
     client = Groq(api_key=os.environ["GROQ_API_KEY"])
 
     response = client.chat.completions.create(
-        model="llama3-70b-8192",  # Free, fast, high quality
+        model="llama-3.1-8b-instant",  # Free, fast, high quality
         messages=[{"role": "user", "content": prompt}],
         max_tokens=1024,
         temperature=0.5,
