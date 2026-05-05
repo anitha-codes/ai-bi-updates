@@ -1,0 +1,70 @@
+name: Auto Subscribe
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  add-subscriber:
+    runs-on: ubuntu-latest
+    # Only run if issue title starts with [SUBSCRIBE]
+    if: startsWith(github.event.issue.title, '[SUBSCRIBE]')
+    permissions:
+      contents: write
+      issues: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract email and add to subscribers.json
+        run: |
+          EMAIL=$(echo "${{ github.event.issue.body }}" | grep -oE '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}' | head -1)
+          
+          if [ -z "$EMAIL" ]; then
+            echo "No valid email found in issue body."
+            exit 1
+          fi
+
+          echo "Adding $EMAIL to subscribers.json"
+
+          python3 - <<EOF
+          import json
+
+          with open("subscribers.json", "r") as f:
+              data = json.load(f)
+
+          if "$EMAIL" not in data["subscribers"]:
+              data["subscribers"].append("$EMAIL")
+              with open("subscribers.json", "w") as f:
+                  json.dump(data, f, indent=2)
+              print(f"Added $EMAIL")
+          else:
+              print(f"$EMAIL already subscribed")
+          EOF
+
+      - name: Commit updated subscribers.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add subscribers.json
+          git diff --cached --quiet || git commit -m "feat: add subscriber from issue #${{ github.event.issue.number }}"
+          git push
+
+      - name: Close issue with confirmation comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const email = context.payload.issue.body.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/)?.[0];
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `✅ **Subscribed!** \`${email}\` has been added to the digest. You'll receive your first email tomorrow morning. Welcome aboard!`
+            });
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              state: 'closed'
+            });
