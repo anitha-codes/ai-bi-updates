@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>AI & BI Daily Digest</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --bg2: #111118;
+      --bg3: #1a1a24;
+      --border: rgba(255,255,255,0.07);
+      --border2: rgba(255,255,255,0.12);
+      --text: #e8e6df;
+      --text2: #9994a8;
+      --text3: #5a5568;
+      --accent: #f0a05a;
+      --accent2: #e06b3a;
+      --ai: #6ee7b7;
+      --ai-bg: rgba(110,231,183,0.08);
+      --bi: #93c5fd;
+      --bi-bg: rgba(147,197,253,0.08);
+      --insight: #fbbf24;
+      --insight-bg: rgba(251,191,36,0.08);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'IBM Plex Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ── NOISE TEXTURE OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      opacity: 0.025;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+
+    /* ── HEADER ── */
+    header {
+      position: sticky; top: 0; z-index: 50;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 40px;
+      background: rgba(10,10,15,0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px; letter-spacing: -0.3px;
+      color: var(--text);
+    }
+    .logo span { color: var(--accent); }
+    .header-right { display: flex; align-items: center; gap: 16px; }
+    .live-badge {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; color: var(--text2);
+      font-family: 'IBM Plex Mono', monospace;
+    }
+    .live-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--ai); animation: blink 2s infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .btn-subscribe {
+      background: var(--accent); color: #0a0a0f;
+      border: none; border-radius: 6px;
+      padding: 8px 18px; font-size: 13px; font-weight: 500;
+      font-family: 'IBM Plex Sans', sans-serif;
+      cursor: pointer; transition: background 0.2s;
+    }
+    .btn-subscribe:hover { background: var(--accent2); }
+
+    /* ── MAIN LAYOUT ── */
+    .page { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 0 40px 80px; }
+
+    /* ── HERO DATE STRIP ── */
+    .date-strip {
+      padding: 40px 0 32px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 48px;
+    }
+    .date-strip .eyebrow {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--text3); margin-bottom: 8px;
+    }
+    .date-strip h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(36px, 5vw, 64px);
+      font-weight: 400; letter-spacing: -1.5px;
+      line-height: 1.05; color: var(--text);
+    }
+    .date-strip h1 em { color: var(--accent); font-style: italic; }
+    .date-strip .meta {
+      margin-top: 16px; font-size: 13px;
+      color: var(--text3); display: flex; gap: 20px; flex-wrap: wrap;
+    }
+    .meta-item { display: flex; align-items: center; gap: 6px; }
+
+    /* ── LOADING / ERROR STATES ── */
+    .state-card {
+      text-align: center; padding: 80px 40px;
+      color: var(--text2); font-size: 15px;
+    }
+    .spinner {
+      width: 32px; height: 32px; border: 2px solid var(--border2);
+      border-top-color: var(--accent); border-radius: 50%;
+      animation: spin 0.8s linear infinite; margin: 0 auto 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── SUMMARY SECTION ── */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 64px;
+    }
+    .summary-card {
+      border-radius: 14px; padding: 24px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      animation: fadeUp 0.5s ease both;
+    }
+    .summary-card.full-width { grid-column: 1 / -1; }
+    .summary-card.ai-card   { border-color: rgba(110,231,183,0.2); background: var(--ai-bg); }
+    .summary-card.bi-card   { border-color: rgba(147,197,253,0.2); background: var(--bi-bg); }
+    .summary-card.insight-card { border-color: rgba(251,191,36,0.2); background: var(--insight-bg); }
+    .card-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+      margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+    }
+    .ai-card .card-label   { color: var(--ai); }
+    .bi-card .card-label   { color: var(--bi); }
+    .insight-card .card-label { color: var(--insight); }
+    .card-label-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: currentColor; flex-shrink: 0;
+    }
+    .bullet-list { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+    .bullet-list li {
+      font-size: 14px; line-height: 1.65; color: var(--text2);
+      padding-left: 16px; position: relative;
+    }
+    .bullet-list li::before {
+      content: ''; position: absolute; left: 0; top: 9px;
+      width: 4px; height: 4px; border-radius: 50%;
+      background: currentColor; opacity: 0.5;
+    }
+    .ai-card   .bullet-list li::before { color: var(--ai); }
+    .bi-card   .bullet-list li::before { color: var(--bi); }
+    .bullet-list li strong { color: var(--text); font-weight: 500; }
+    .insight-text {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px; line-height: 1.6;
+      color: var(--text); font-style: italic;
+    }
+    .insight-text::before { content: '"'; color: var(--insight); margin-right: 2px; }
+    .insight-text::after  { content: '"'; color: var(--insight); margin-left: 2px; }
+
+    /* ── DIVIDER ── */
+    .section-divider {
+      display: flex; align-items: center; gap: 16px;
+      margin-bottom: 32px;
+    }
+    .section-divider h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px; font-weight: 400; white-space: nowrap;
+    }
+    .divider-line {
+      flex: 1; height: 1px; background: var(--border);
+    }
+    .divider-count {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px; color: var(--text3);
+      white-space: nowrap;
+    }
+
+    /* ── ARTICLE GROUPS ── */
+    .article-group { margin-bottom: 48px; }
+    .group-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--text3); margin-bottom: 20px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .group-label::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+    .articles-bubbles {
+      display: flex; flex-wrap: wrap; gap: 12px;
+    }
+    .article-bubble {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s, transform 0.15s;
+      max-width: 380px;
+      text-decoration: none;
+      display: block;
+      animation: fadeUp 0.4s ease both;
+    }
+    .article-bubble:hover {
+      border-color: var(--border2);
+      background: var(--bg3);
+      transform: translateY(-2px);
+    }
+    .article-bubble.ai-bubble:hover   { border-color: rgba(110,231,183,0.3); }
+    .article-bubble.bi-bubble:hover   { border-color: rgba(147,197,253,0.3); }
+    .bubble-source {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px; letter-spacing: 0.5px; text-transform: uppercase;
+      color: var(--text3); margin-bottom: 6px;
+    }
+    .bubble-title {
+      font-size: 14px; font-weight: 500; line-height: 1.45;
+      color: var(--text); margin-bottom: 8px;
+    }
+    .bubble-summary {
+      font-size: 12px; color: var(--text2); line-height: 1.55;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .bubble-footer {
+      margin-top: 10px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .bubble-date {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px; color: var(--text3);
+    }
+    .bubble-arrow { font-size: 12px; color: var(--text3); }
+    .article-bubble:hover .bubble-arrow { color: var(--accent); }
+
+    /* ── EMPTY STATE ── */
+    .no-data {
+      grid-column: 1/-1; text-align: center;
+      padding: 48px; color: var(--text2); font-size: 14px;
+    }
+
+    /* ── SUBSCRIBE MODAL ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,0.75); backdrop-filter: blur(8px);
+      align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--bg2); border: 1px solid var(--border2);
+      border-radius: 18px; padding: 40px;
+      max-width: 460px; width: 100%;
+      animation: modalIn 0.25s ease;
+      position: relative;
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.94) translateY(12px); }
+      to   { opacity: 1; transform: none; }
+    }
+    .modal-close {
+      position: absolute; top: 16px; right: 20px;
+      background: none; border: none; color: var(--text3);
+      font-size: 22px; cursor: pointer; line-height: 1;
+      transition: color 0.2s;
+    }
+    .modal-close:hover { color: var(--text); }
+    .modal-icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: rgba(240,160,90,0.12); border: 1px solid rgba(240,160,90,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; margin-bottom: 20px;
+    }
+    .modal h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 26px; font-weight: 400; margin-bottom: 8px;
+    }
+    .modal p {
+      font-size: 14px; color: var(--text2); line-height: 1.6; margin-bottom: 28px;
+    }
+    .modal-input {
+      width: 100%; background: var(--bg3);
+      border: 1px solid var(--border2); border-radius: 8px;
+      padding: 13px 16px; font-size: 15px; color: var(--text);
+      font-family: 'IBM Plex Sans', sans-serif;
+      outline: none; margin-bottom: 12px;
+      transition: border-color 0.2s;
+    }
+    .modal-input::placeholder { color: var(--text3); }
+    .modal-input:focus { border-color: var(--accent); }
+    .modal-input.error { border-color: #f87171; }
+    .modal-btn {
+      width: 100%; background: var(--accent); color: #0a0a0f;
+      border: none; border-radius: 8px;
+      padding: 13px; font-size: 15px; font-weight: 500;
+      font-family: 'IBM Plex Sans', sans-serif;
+      cursor: pointer; transition: background 0.2s, opacity 0.2s;
+    }
+    .modal-btn:hover { background: var(--accent2); }
+    .modal-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .modal-note {
+      font-size: 12px; color: var(--text3); text-align: center;
+      margin-top: 14px; line-height: 1.5;
+    }
+    .modal-success {
+      display: none; text-align: center; padding: 16px 0;
+    }
+    .modal-success .check {
+      font-size: 40px; margin-bottom: 12px;
+    }
+    .modal-success h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px; margin-bottom: 8px; font-weight: 400;
+    }
+    .modal-success p {
+      font-size: 13px; color: var(--text2); margin-bottom: 0;
+    }
+    .modal-error {
+      font-size: 12px; color: #f87171; margin-bottom: 10px; display: none;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border); padding: 28px 40px;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 12px; position: relative; z-index: 1;
+    }
+    footer p { font-size: 12px; color: var(--text3); }
+    footer a { color: var(--text3); text-decoration: none; }
+    footer a:hover { color: var(--text); }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    @media (max-width: 700px) {
+      header { padding: 14px 20px; }
+      .page { padding: 0 20px 60px; }
+      .summary-grid { grid-template-columns: 1fr; }
+      .summary-card.full-width { grid-column: 1; }
+      footer { padding: 24px 20px; justify-content: center; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">pulse<span>.</span>ai</div>
+  <div class="header-right">
+    <div class="live-badge">
+      <span class="live-dot"></span>
+      <span id="last-updated">loading...</span>
+    </div>
+    <button class="btn-subscribe" onclick="openModal()">Subscribe</button>
+  </div>
+</header>
+
+<!-- MAIN -->
+<div class="page">
+
+  <!-- DATE STRIP -->
+  <div class="date-strip">
+    <div class="eyebrow">Daily Intelligence Digest</div>
+    <h1 id="digest-date">Loading today's<br><em>digest...</em></h1>
+    <div class="meta">
+      <span class="meta-item" id="meta-articles">—</span>
+      <span class="meta-item">Curated by AI · Delivered 8:30 AM IST</span>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div id="content">
+    <div class="state-card">
+      <div class="spinner"></div>
+      <p>Fetching today's digest...</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <p>pulse.ai · Powered by Claude + GitHub Actions · Fully open source</p>
+  <p>
+    <a href="https://github.com/YOUR_USERNAME/ai-bi-news-digest" target="_blank">View source on GitHub</a>
+  </p>
+</footer>
+
+<!-- SUBSCRIBE MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">×</button>
+
+    <div id="modal-form-view">
+      <div class="modal-icon">📬</div>
+      <h2>Get the daily digest</h2>
+      <p>Enter your email and we'll add you to the list. You'll receive a curated AI & BI briefing every morning, completely free.</p>
+      <input class="modal-input" id="modal-email" type="email" placeholder="your@email.com" autocomplete="email"/>
+      <div class="modal-error" id="modal-error"></div>
+      <button class="modal-btn" id="modal-btn" onclick="handleSubscribe()">Subscribe free →</button>
+      <p class="modal-note">No spam. Unsubscribe any time by opening a GitHub issue.</p>
+    </div>
+
+    <div class="modal-success" id="modal-success">
+      <div class="check">✅</div>
+      <h3>You're subscribed!</h3>
+      <p>Your email has been submitted. You'll receive tomorrow's digest in your inbox by 8:30 AM IST.<br><br>
+      <span style="color:var(--text3);font-size:12px;">A GitHub issue was created to add your email — it'll be processed automatically within minutes.</span></p>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── CONFIG — update these two values ──
+  const GITHUB_OWNER = 'YOUR_USERNAME';
+  const GITHUB_REPO  = 'ai-bi-news-digest';
+  // ── END CONFIG ──
+
+  const DATA_URL = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/main/docs/data.json`;
+
+  // ── LOAD DIGEST DATA ──
+  async function loadDigest() {
+    try {
+      const res = await fetch(DATA_URL + '?t=' + Date.now());
+      if (!res.ok) throw new Error('No digest data yet');
+      const data = await res.json();
+      renderDigest(data);
+    } catch (e) {
+      document.getElementById('content').innerHTML = `
+        <div class="state-card">
+          <p style="font-size:32px;margin-bottom:16px;">📭</p>
+          <p>No digest available yet.</p>
+          <p style="font-size:13px;margin-top:8px;color:var(--text3)">Trigger the GitHub Action manually to generate the first one.</p>
+        </div>`;
+      document.getElementById('digest-date').innerHTML = `Today's<br><em>digest</em>`;
+    }
+  }
+
+  function renderDigest(data) {
+    // Update header meta
+    document.getElementById('digest-date').innerHTML =
+      `${data.display_date.split(',')[0]},<br><em>${data.display_date.split(',').slice(1).join(',').trim()}</em>`;
+    document.getElementById('meta-articles').textContent = `${data.total_articles} articles`;
+
+    const gen = new Date(data.generated_at);
+    document.getElementById('last-updated').textContent =
+      'updated ' + gen.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) + ' UTC';
+
+    let html = '';
+
+    // ── SUMMARY CARDS ──
+    if (data.summary_sections && data.summary_sections.length) {
+      html += `<div class="summary-grid">`;
+
+      data.summary_sections.forEach(section => {
+        const h = section.heading || '';
+        let cardClass = 'summary-card';
+        let labelColor = '';
+        let labelText = h;
+
+        if (h.startsWith('🤖')) { cardClass += ' ai-card'; }
+        else if (h.startsWith('📊')) { cardClass += ' bi-card'; }
+        else if (h.startsWith('💡')) { cardClass += ' insight-card full-width'; }
+        else if (h.startsWith('📰')) return; // skip articles list section
+
+        if (h.startsWith('💡')) {
+          const text = section.bullets.join(' ');
+          html += `<div class="${cardClass}">
+            <div class="card-label"><span class="card-label-dot"></span>${labelText}</div>
+            <div class="insight-text">${escHtml(text)}</div>
+          </div>`;
+        } else {
+          const bullets = section.bullets.map(b => {
+            // Bold first phrase before colon if present
+            const colonIdx = b.indexOf(':');
+            if (colonIdx > 0 && colonIdx < 60) {
+              return `<li><strong>${escHtml(b.slice(0,colonIdx))}</strong>${escHtml(b.slice(colonIdx))}</li>`;
+            }
+            return `<li>${escHtml(b)}</li>`;
+          }).join('');
+          html += `<div class="${cardClass}">
+            <div class="card-label"><span class="card-label-dot"></span>${labelText}</div>
+            <ul class="bullet-list">${bullets}</ul>
+          </div>`;
+        }
+      });
+
+      html += `</div>`;
+    }
+
+    // ── ARTICLE GROUPS ──
+    if (data.article_groups && data.article_groups.length) {
+      const totalArts = data.article_groups.reduce((s,g)=>s+g.articles.length,0);
+      html += `<div class="section-divider">
+        <h2>Today's articles</h2>
+        <div class="divider-line"></div>
+        <div class="divider-count">${totalArts} stories</div>
+      </div>`;
+
+      data.article_groups.forEach(group => {
+        const isAI = group.category.toLowerCase().includes('ai');
+        html += `<div class="article-group">
+          <div class="group-label">${escHtml(group.category)}</div>
+          <div class="articles-bubbles">`;
+
+        group.articles.forEach((a, i) => {
+          const bubbleClass = isAI ? 'ai-bubble' : 'bi-bubble';
+          html += `<a class="article-bubble ${bubbleClass}" href="${escHtml(a.link)}" target="_blank" rel="noopener"
+              style="animation-delay:${i * 0.05}s">
+            <div class="bubble-source">${escHtml(a.source)}</div>
+            <div class="bubble-title">${escHtml(a.title)}</div>
+            <div class="bubble-summary">${escHtml(a.summary)}</div>
+            <div class="bubble-footer">
+              <span class="bubble-date">${escHtml(a.published)}</span>
+              <span class="bubble-arrow">↗</span>
+            </div>
+          </a>`;
+        });
+
+        html += `</div></div>`;
+      });
+    }
+
+    document.getElementById('content').innerHTML = html || `<div class="no-data">No content available.</div>`;
+  }
+
+  function escHtml(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── MODAL ──
+  function openModal() {
+    document.getElementById('modal-overlay').classList.add('open');
+    setTimeout(() => document.getElementById('modal-email')?.focus(), 100);
+  }
+  function closeModal() {
+    document.getElementById('modal-overlay').classList.remove('open');
+  }
+  function handleOverlayClick(e) {
+    if (e.target === document.getElementById('modal-overlay')) closeModal();
+  }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  // ── SUBSCRIBE via GitHub Issue ──
+  async function handleSubscribe() {
+    const emailEl = document.getElementById('modal-email');
+    const errEl   = document.getElementById('modal-error');
+    const btn     = document.getElementById('modal-btn');
+    const email   = emailEl.value.trim();
+
+    errEl.style.display = 'none';
+    emailEl.classList.remove('error');
+
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errEl.textContent = 'Please enter a valid email address.';
+      errEl.style.display = 'block';
+      emailEl.classList.add('error');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+
+    try {
+      // Create a GitHub issue — the auto_subscribe workflow will pick it up
+      const res = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/issues`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer YOUR_GITHUB_PAT_HERE`,   // ← replace with your PAT
+          'X-GitHub-Api-Version': '2022-11-28'
+        },
+        body: JSON.stringify({
+          title: `[SUBSCRIBE] New subscriber`,
+          body: `New subscription request from the digest dashboard.\n\nEmail: ${email}`,
+          labels: ['subscription']
+        })
+      });
+
+      if (!res.ok) throw new Error('GitHub API error: ' + res.status);
+
+      // Show success
+      document.getElementById('modal-form-view').style.display = 'none';
+      document.getElementById('modal-success').style.display = 'block';
+
+    } catch (err) {
+      errEl.textContent = 'Something went wrong. Please try again or open a GitHub issue manually.';
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Subscribe free →';
+    }
+  }
+
+  // Enter key in email field
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('modal-email')?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleSubscribe();
+    });
+    loadDigest();
+  });
+</script>
+</body>
+</html>
