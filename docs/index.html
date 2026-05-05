@@ -394,7 +394,7 @@
 <footer>
   <p>pulse.ai · Powered by Claude + GitHub Actions · Fully open source</p>
   <p>
-    <a href="https://github.com/YOUR_USERNAME/ai-bi-news-digest" target="_blank">View source on GitHub</a>
+    <a href="https://github.com/anitha-codes/ai-bi-updates" target="_blank">View source on GitHub</a>
   </p>
 </footer>
 
@@ -424,8 +424,8 @@
 
 <script>
   // ── CONFIG — update these two values ──
-  const GITHUB_OWNER = 'YOUR_USERNAME';
-  const GITHUB_REPO  = 'ai-bi-news-digest';
+  const GITHUB_OWNER = 'anitha-codes';
+  const GITHUB_REPO  = 'ai-bi-updates';
   // ── END CONFIG ──
 
   const DATA_URL = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/main/docs/data.json`;
@@ -575,11 +575,11 @@
 
     try {
       // Create a GitHub issue — the auto_subscribe workflow will pick it up
-      const res = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/issues`, {
+      const res = await fetch(`https://api.github.com/repos/anitha-codes/ai-bi-updates/issues`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer YOUR_GITHUB_PAT_HERE`,   // ← replace with your PAT
+          'Authorization': `Bearer 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`,   // ← replace with your PAT
           'X-GitHub-Api-Version': '2022-11-28'
         },
         body: JSON.stringify({
